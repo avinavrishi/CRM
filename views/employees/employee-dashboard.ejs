@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <%- include('../partials/employee-navbar') %>
+
+  <div class="max-w-4xl mx-auto py-10 px-4">
+    <div class="bg-white rounded-lg shadow p-8 mb-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-2">Welcome, <%= user.name %> (Employee)</h1>
+      <p class="text-gray-600 mb-4">Company: <%= user.companyName %></p>
+      <div class="flex flex-col md:flex-row md:space-x-4 space-y-2 md:space-y-0">
+        <a href="/clients" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md shadow hover:bg-indigo-700 transition">
+          <i class="fas fa-users mr-2"></i> View Clients
+        </a>
+        <a href="/auth/logout" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md shadow hover:bg-gray-300 transition">
+          <i class="fas fa-sign-out-alt mr-2"></i> Logout
+        </a>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-lg shadow p-6 flex items-center">
+        <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+          <i class="fas fa-users text-xl"></i>
+        </div>
+        <div class="ml-4">
+          <h2 class="text-gray-600 text-sm">Clients</h2>
+          <p class="text-lg font-semibold text-gray-900">View and manage your assigned clients.</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6 flex items-center">
+        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+          <i class="fas fa-info-circle text-xl"></i>
+        </div>
+        <div class="ml-4">
+          <h2 class="text-gray-600 text-sm">Profile</h2>
+          <p class="text-lg font-semibold text-gray-900">Update your profile and view your information.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <%- include('../partials/employee-footer') %>
+
+  <script>
+    // Function to check if the context is secure
+    function isSecureContext() {
+      return window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    }
+
+    // Function to get user's location
+    function getLocation() {
+      // Skip location tracking if not in secure context
+      if (!isSecureContext()) {
+        console.log('Skipping location tracking - not in secure context');
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        console.error('Geolocation is not supported by your browser');
+        return;
+      }
+
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      };
+
+      navigator.geolocation.getCurrentPosition(
+        // Success callback
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          try {
+            const response = await fetch('/auth/api/location-log', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                latitude,
+                longitude,
+                timestamp: new Date().toISOString()
+              })
+            });
+
+            const data = await response.json();
+            if (!data.success) {
+              console.error('Failed to update location:', data.error);
+            }
+          } catch (err) {
+            console.error('Error updating location:', err);
+          }
+        },
+        // Error callback
+        (error) => {
+          console.error('Error getting location:', error);
+        },
+        options
+      );
+    }
+
+    // Only try to get location if in secure context
+    if (isSecureContext()) {
+      document.addEventListener('DOMContentLoaded', getLocation);
+    }
+  </script>
+</body>
+</html>
